@@ -6,8 +6,9 @@ public class MapGenerator : MonoBehaviour
 {
     public enum DrawMode{NoiseMap, ColorMap, Mesh};
 
-    public int mapWidth;
-    public int mapHeight;
+    const int chunkSize = 241;
+    [Range(0,6)]
+    public int levelOfDetail;
     public float mapScale;
 
     public int octaves;
@@ -28,7 +29,7 @@ public class MapGenerator : MonoBehaviour
     public TerrainType[] terrains;
 
     public void GenerateMap() {
-        float[,] noiseMap = Noise.Generate(mapWidth, mapHeight, seed, mapScale, octaves, persistance, lacunarity, offset);
+        float[,] noiseMap = Noise.Generate(chunkSize, chunkSize, seed, mapScale, octaves, persistance, lacunarity, offset);
         
         Color[] colorMap = this.ConvertNoiseToRegions(noiseMap);
 
@@ -39,20 +40,12 @@ public class MapGenerator : MonoBehaviour
         } else if (drawMode == DrawMode.ColorMap) {
             mr.DrawTexture(TextureGenerator.TextureFromColorMap(colorMap, noiseMap.GetLength(0), noiseMap.GetLength(1)));
         } else if (drawMode == DrawMode.Mesh) {
-            mr.DrawMesh(MeshGenerator.GenereateTerrainMesh(noiseMap, heightMultiplier, meshHeightCurve), TextureGenerator.TextureFromColorMap(colorMap, mapWidth, mapHeight));
+            mr.DrawMesh(MeshGenerator.GenereateTerrainMesh(noiseMap, heightMultiplier, meshHeightCurve, levelOfDetail), TextureGenerator.TextureFromColorMap(colorMap, chunkSize, chunkSize));
         }
         
     }
 
     public void OnValidate() {
-        if (mapWidth < 1) {
-            mapWidth = 1;
-        }
-
-        if (mapHeight < 1) {
-            mapHeight = 1;
-        }
-
         if (octaves < 0) {
             octaves = 0;
         }
