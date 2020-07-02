@@ -28,23 +28,6 @@ public class MapGenerator : MonoBehaviour
 
     public TerrainType[] terrains;
 
-    public void GenerateMap() {
-        float[,] noiseMap = Noise.Generate(chunkSize, chunkSize, seed, mapScale, octaves, persistance, lacunarity, offset);
-        
-        Color[] colorMap = this.ConvertNoiseToRegions(noiseMap);
-
-        MapRenderer mr = FindObjectOfType<MapRenderer>();
-
-        if (drawMode == DrawMode.NoiseMap) {
-            mr.DrawTexture(TextureGenerator.TextureFromHeightMap(noiseMap));
-        } else if (drawMode == DrawMode.ColorMap) {
-            mr.DrawTexture(TextureGenerator.TextureFromColorMap(colorMap, noiseMap.GetLength(0), noiseMap.GetLength(1)));
-        } else if (drawMode == DrawMode.Mesh) {
-            mr.DrawMesh(MeshGenerator.GenereateTerrainMesh(noiseMap, heightMultiplier, meshHeightCurve, levelOfDetail), TextureGenerator.TextureFromColorMap(colorMap, chunkSize, chunkSize));
-        }
-        
-    }
-
     public void OnValidate() {
         if (octaves < 0) {
             octaves = 0;
@@ -54,6 +37,29 @@ public class MapGenerator : MonoBehaviour
             lacunarity = 1;
         }
 
+    }
+
+    public void DrawMapInEditor() {
+        MapRenderer mr = FindObjectOfType<MapRenderer>();
+        MapData md = GenerateMapData();
+
+        if (drawMode == DrawMode.NoiseMap) {
+            mr.DrawTexture(TextureGenerator.TextureFromHeightMap(md.heightMap));
+        } else if (drawMode == DrawMode.ColorMap) {
+            mr.DrawTexture(TextureGenerator.TextureFromColorMap(md.colorMap, chunkSize, chunkSize));
+        } else if (drawMode == DrawMode.Mesh) {
+            mr.DrawMesh(
+                MeshGenerator.GenereateTerrainMesh(md.heightMap, heightMultiplier, meshHeightCurve, levelOfDetail),
+                TextureGenerator.TextureFromColorMap(md.colorMap, chunkSize, chunkSize)
+            );
+        }
+    }
+
+    private MapData GenerateMapData() {
+        float[,] noiseMap = Noise.Generate(chunkSize, chunkSize, seed, mapScale, octaves, persistance, lacunarity, offset);
+        Color[] colorMap = this.ConvertNoiseToRegions(noiseMap);
+
+        return new MapData(noiseMap, colorMap);
     }
 
     private Color[] ConvertNoiseToRegions(float[,] noiseMap) {
@@ -88,4 +94,15 @@ public struct TerrainType {
     public string name;
     public float height;
     public Color color;
+}
+
+
+public struct MapData{
+    public float[,] heightMap;
+    public Color[] colorMap;
+
+    public MapData(float[,] heightMap, Color[] colorMap) {
+        this.heightMap = heightMap;
+        this.colorMap = colorMap;
+    }
 }
